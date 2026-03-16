@@ -18,7 +18,7 @@ app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
 
 db.init_app(app)
 jwt = JWTManager(app)
-#register
+
 app.register_blueprint(auth_bp, url_prefix='/auth')
 
 if __name__ == '__main__':
