@@ -42,6 +42,8 @@ class LoginAPI(Resource):
             "access_token": access_token,
             "user": {"id": user.id, "name": user.name, "role": user.role}
         }, 200
+    
+    #
 
 auth_api.add_resource(RegisterAPI, '/register')
 auth_api.add_resource(LoginAPI, '/login')
