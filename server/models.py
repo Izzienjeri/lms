@@ -17,7 +17,7 @@ class User(db.Model):
 
 
     def set_password(self, password):
-        self.password_hash = generate_password_hash,(password)
+        self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
@@ -30,7 +30,7 @@ class Course(db.Model):
     instructor_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False) 
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text, nullable=True)
-    is_published = db.Column(db.Boolean, deafault=False)
+    is_published = db.Column(db.Boolean, default=False)
 
 class Module(db.Model):
     __tablename__ = 'modules'
@@ -50,19 +50,19 @@ class Lesson(db.Model):
     order_index = db.Column(db.Integer, nullable=False)
 
 class Enrollment(db.Model):
-    __tablename__ = 'enrollemnts'
+    __tablename__ = 'enrollments'
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     student_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
     course_id= db.Column(db.String(36), db.ForeignKey('courses.id'), nullable=False)
-    enrolled_at = db.Column(db.Datetime, default=datetime.utcnow)
+    enrolled_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class LessonProgress(db.Model):
     __tablename__ = 'lesson_progress'
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     student_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable = False)
-    lesson_id = db.Column(db.String(36), db.Foreignkey('lessons.id'), nullable = False)
+    lesson_id = db.Column(db.String(36), db.ForeignKey('lessons.id'), nullable = False)
     is_completed = db.Column(db.Boolean, default=False)
     completed_at = db.Column(db.DateTime, nullable=True)
 
