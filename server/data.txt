@@ -1,6 +1,6 @@
 # Extracted Code (.py)
-# Date and Time: 2026-03-19 22:17:34
-# Files Included: 3
+# Date and Time: 2026-03-19 22:53:59
+# Files Included: 4
 
 # === models.py ===
 ```python
@@ -23,7 +23,7 @@ class User(db.Model):
 
 
     def set_password(self, password):
-        self.password_hash = generate_password_hash,(password)
+        self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
@@ -36,7 +36,7 @@ class Course(db.Model):
     instructor_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False) 
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text, nullable=True)
-    is_published = db.Column(db.Boolean, deafault=False)
+    is_published = db.Column(db.Boolean, default=False)
 
 class Module(db.Model):
     __tablename__ = 'modules'
@@ -56,19 +56,19 @@ class Lesson(db.Model):
     order_index = db.Column(db.Integer, nullable=False)
 
 class Enrollment(db.Model):
-    __tablename__ = 'enrollemnts'
+    __tablename__ = 'enrollments'
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     student_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
     course_id= db.Column(db.String(36), db.ForeignKey('courses.id'), nullable=False)
-    enrolled_at = db.Column(db.Datetime, default=datetime.utcnow)
+    enrolled_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class LessonProgress(db.Model):
     __tablename__ = 'lesson_progress'
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     student_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable = False)
-    lesson_id = db.Column(db.String(36), db.Foreignkey('lessons.id'), nullable = False)
+    lesson_id = db.Column(db.String(36), db.ForeignKey('lessons.id'), nullable = False)
     is_completed = db.Column(db.Boolean, default=False)
     completed_at = db.Column(db.DateTime, nullable=True)
 ```
@@ -81,7 +81,7 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from dotenv import load_dotenv
 from models import db
-
+from routes.courses import courses_bp
 from routes.auth import auth_bp
 
 load_dotenv()
@@ -97,6 +97,7 @@ db.init_app(app)
 jwt = JWTManager(app)
 
 app.register_blueprint(auth_bp, url_prefix='/auth')
+app.register_blueprint(courses_bp, url_prefix='/courses')
 
 if __name__ == '__main__':
     with app.app_context():
@@ -156,4 +157,99 @@ class LoginAPI(Resource):
 
 auth_api.add_resource(RegisterAPI, '/register')
 auth_api.add_resource(LoginAPI, '/login')
+```
+
+# === routes/courses.py ===
+```python
+from flask import Blueprint, request
+from flask_restful import Api, Resource
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from models import db, Course, Module
+
+courses_bp = Blueprint('courses', __name__)
+courses_api = Api(courses_bp)
+
+
+
+class CourseListAPI(Resource):
+    def get(self): 
+        courses = Course.query.filter_by(is_published=True).all()
+        return[
+            {
+                "id": c.id,
+                "title": c.title,
+                "description": c.description,
+                "instructor_id": c.instructor_id
+            } for c in courses
+        ], 200
+    
+
+    @jwt_required()
+    def post(self):
+        current_user = get_jwt_identity()
+
+        if current_user['role'] != 'instructor':
+            return {"error": "Only instructors can create courses!!!"}, 403
+        
+        data = request.get_json()
+        new_course = Course (
+            title=data['title'],
+            description=data.get('description', ''),
+            instructor_id=current_user['id'],
+            is_published=data.get('is_published', False)
+        )
+
+        db.session.add(new_course)
+        db.session.commit()
+
+        return {"message": "Course created successfully", "course_id": new_course.id}, 201
+
+
+class CourseDetailAPI(Resource):
+    def get(self, course_id):
+        course = Course.query.get(course_id)
+        if not course:
+            return {"error": "course not found"}, 404
+        
+        return {
+            "id": course.id,
+            "title": course.title,
+            "description": course.description,
+            "instructor_id": course.instructor_id,
+            "is_published": course.is_published
+        }, 200
+    
+
+class CourseModulesAPI(Resource):
+    def get(self, course_id):
+        modules = Module.query.filter_by(course_id=course_id).order_by(Module.order_index).all()
+        return[
+            {
+                "id": m.id,
+                "title": m.title,
+                "order_index": m.order_index
+            } for m in modules
+        ], 200
+
+    @jwt_required()
+    def post(self, course_id):
+        current_user = get_jwt_identity()
+        if current_user['role'] != 'instructor':
+            return {"error": "Unauthorized"}, 403
+
+        data = request.get_json()
+        new_module = Module(
+            course_id=course_id,
+            title=data['title'],
+            order_index=data.get('order_index', 0)
+        )
+        db.session.add(new_module)
+        db.session.commit()
+        
+        return {"message": "Module created", "module_id": new_module.id}, 201
+
+
+courses_api.add_resource(CourseListAPI, '/')
+courses_api.add_resource(CourseDetailAPI, '/<string:course_id>')
+courses_api.add_resource(CourseModulesAPI, '/<string:course_id>/modules')
 ```
