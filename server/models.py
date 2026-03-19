@@ -24,9 +24,9 @@ class User(db.Model):
 
 
 class Course(db.Model):
-    __tablenmae__ = 'courses'
+    __tablename__ = 'courses'
 
-    id = db.Column(db.String(36), primary_key=True, deafult=lambda: str(uuid.uuid4()))
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     instructor_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False) 
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text, nullable=True)
