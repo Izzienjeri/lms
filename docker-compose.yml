@@ -1,0 +1,30 @@
+services:
+
+  server:
+    container_name: server
+    build: 
+      context: ./server
+      dockerfile: Dockerfile
+    volumes:
+      - ./server:/server
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./server/.env
+    depends_on:
+      - database
+
+  database:
+    container_name: database
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Njeri1456_ 
+      POSTGRES_DB: lms_db
+    volumes:
+      - db_data:/var/lib/postgresql
+
+volumes:
+  db_data:
