@@ -1,3 +1,5 @@
+import json
+
 from flask import Blueprint, request
 from flask_restful import Api, Resource
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -5,8 +7,6 @@ from models import db, Course, Module
 
 courses_bp = Blueprint('courses', __name__)
 courses_api = Api(courses_bp)
-
-
 
 class CourseListAPI(Resource):
     def get(self): 
@@ -20,10 +20,29 @@ class CourseListAPI(Resource):
             } for c in courses
         ], 200
     
+    @jwt_required()
+    def put(self):
+
+        if request.method != 'PUT':
+            return {"error": "Method not allowed"}, 405
+
+        data = request.get_json()
+
+        course = Course.query.get(data['id'])
+        if not course:
+            return {"error": "Course not found"}, 404
+        
+        course.title = data.get('title', course.title)
+        course.description = data.get('description', course.description)
+        course.is_published = data.get('is_published', course.is_published)
+        
+        db.session.commit()
+
+        return {"message": "Course updated successfully"}, 200
 
     @jwt_required()
     def post(self):
-        current_user = get_jwt_identity()
+        current_user = json.loads(get_jwt_identity())
 
         if current_user['role'] != 'instructor':
             return {"error": "Only instructors can create courses!!!"}, 403

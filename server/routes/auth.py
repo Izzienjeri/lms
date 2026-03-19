@@ -1,3 +1,5 @@
+import json
+
 from flask import Blueprint, request
 from flask_restful import Api, Resource
 from flask_jwt_extended import create_access_token
@@ -35,11 +37,14 @@ class LoginAPI(Resource):
         if not user or not user.check_password(data['password']):
             return {"error": "Invalid email or password"}, 401
             
-        access_token = create_access_token(identity={"id": user.id, "role": user.role})
+        # https://github.com/vimalloc/flask-jwt-extended/issues/557#issuecomment-2483711832
+        user_payload = {"id": user.id, "role": user.role}
+
+        access_token = create_access_token(identity=json.dumps(user_payload))
         
         return {
             "message": "Login successful",
-            "access_token": access_token,
+            "access_token": str(access_token),
             "user": {"id": user.id, "name": user.name, "role": user.role}
         }, 200
     
