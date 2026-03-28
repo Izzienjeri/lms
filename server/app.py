@@ -4,9 +4,11 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from dotenv import load_dotenv
 from models import db
-from routes.courses import courses_bp
+
 from routes.auth import auth_bp
+from routes.courses import courses_bp
 from routes.modules import modules_bp
+from routes.lessons import lessons_bp
 
 load_dotenv()
 
@@ -23,6 +25,7 @@ jwt = JWTManager(app)
 app.register_blueprint(auth_bp, url_prefix='/auth')
 app.register_blueprint(courses_bp, url_prefix='/courses')
 app.register_blueprint(modules_bp, url_prefix='/modules')
+app.register_blueprint(lessons_bp, url_prefix='/lessons')
 
 if __name__ == '__main__':
     with app.app_context():
