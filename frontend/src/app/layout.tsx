@@ -51,7 +51,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
               <div className="flex items-center space-x-4">
                 {isMounted && (
-                  user ? (
+                  user ? (                                                                                                           
+                    
                     <>
                       <span className="text-sm text-gray-500 hidden sm:block">
                         Welcome, <strong className="text-gray-900">{user.name}</strong>
